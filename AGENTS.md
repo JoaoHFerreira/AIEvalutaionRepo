@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Project Objective: Simple Search Bar
+Create a performant, type-safe search bar using a Rust backend API and a Rust-to-WASM frontend.
+The components are currently developed independently but are integrated via Docker Compose with an Nginx reverse proxy for seamless local development and production-ready deployment.
+
 ## Stack
 
 | Layer       | Tech                                              |
@@ -77,16 +81,16 @@ WORKDIR /app
 # Cache dependencies separately from source (layer efficiency)
 COPY Cargo.toml Cargo.lock ./
 COPY backend/Cargo.toml backend/
-COPY core/Cargo.toml core/
-RUN mkdir -p backend/src core/src \
+COPY search_core/Cargo.toml search_core/
+RUN mkdir -p backend/src search_core/src \
     && echo "fn main(){}" > backend/src/main.rs \
-    && echo "" > core/src/lib.rs \
+    && echo "" > search_core/src/lib.rs \
     && cargo build --release -p backend \
-    && rm -rf backend/src core/src
+    && rm -rf backend/src search_core/src
 
 # Build real source
 COPY . .
-RUN touch backend/src/main.rs core/src/lib.rs \
+RUN touch backend/src/main.rs search_core/src/lib.rs \
     && cargo build --release -p backend
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
@@ -348,7 +352,7 @@ Code must compile with `cargo clippy -- -D warnings`. Suppressions require a com
 │   ├── Dockerfile          ← multi-stage: wasm-builder → nginx:alpine
 │   ├── src/
 │   └── tests/
-├── core/                   ← shared pure Rust logic (no I/O, WASM-safe)
+├── search_core/            ← shared pure Rust logic (no I/O, WASM-safe)
 │   ├── src/
 │   └── tests/
 ├── js-glue/                ← minimal JS; imports from wasm-pack output only
@@ -357,8 +361,8 @@ Code must compile with `cargo clippy -- -D warnings`. Suppressions require a com
     └── 002_...sql
 ```
 
-> `core/` must compile for both native and `wasm32-unknown-unknown` targets.
-> Run inside dev container: `cargo check --target wasm32-unknown-unknown -p core`
+> `search_core/` must compile for both native and `wasm32-unknown-unknown` targets.
+> Run inside dev container: `cargo check --target wasm32-unknown-unknown -p search_core`
 
 ---
 
